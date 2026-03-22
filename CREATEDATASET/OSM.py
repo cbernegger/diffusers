@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, as_completed, wait
-import gzip
-import hashlib
 import json
 import math
 import threading
@@ -17,7 +15,7 @@ import requests
 from rasterio.features import rasterize
 from rasterio.warp import transform_bounds, transform_geom
 
-from paths import LAYERS_DIR, OSM_CACHE_DIR, WARPED_TIFS_DIR, ensure_createdataset_dirs
+from paths import LAYERS_DIR, WARPED_TIFS_DIR, ensure_createdataset_dirs
 from scene_assets import copy_source_tif_to_scene_dir
 
 STEP_NAME = "osm"
@@ -67,7 +65,6 @@ class OverpassTileResult:
     bbox_lonlat: tuple[float, float, float, float]
     endpoint_url: str
     elements: list[dict]
-    from_cache: bool
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -162,17 +159,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
         type=int,
         default=DEFAULT_MAX_CONCURRENT_SCENES,
         help="Maximum number of TIFF scenes to process in parallel for the OSM step.",
-    )
-    parser.add_argument(
-        "--osm-cache-dir",
-        type=Path,
-        default=OSM_CACHE_DIR,
-        help="Folder for cached raw OSM tile responses.",
-    )
-    parser.add_argument(
-        "--osm-refresh-cache",
-        action="store_true",
-        help="Ignore existing cached OSM tile responses and redownload them.",
     )
     return parser
 
@@ -282,84 +268,6 @@ def resolve_overpass_urls(
             return normalized
 
     return list(DEFAULT_OVERPASS_URLS)
-
-
-def make_cache_key(
-    *,
-    bbox_lonlat: tuple[float, float, float, float],
-    highway_pattern: str,
-) -> str:
-    bbox_text = ",".join(f"{value:.8f}" for value in bbox_lonlat)
-    digest = hashlib.sha1(f"{bbox_text}|{highway_pattern}".encode("utf-8")).hexdigest()[:12]
-    return digest
-
-
-def get_scene_cache_dir(cache_dir: Path, scene_name: str) -> Path:
-    digest = hashlib.sha1(scene_name.encode("utf-8")).hexdigest()[:12]
-    return cache_dir / f"{scene_name}_{digest}"
-
-
-def get_tile_cache_path(
-    *,
-    cache_dir: Path,
-    scene_name: str,
-    tile_index: int,
-    bbox_lonlat: tuple[float, float, float, float],
-    highway_pattern: str,
-) -> Path:
-    scene_cache_dir = get_scene_cache_dir(cache_dir, scene_name)
-    scene_cache_dir.mkdir(parents=True, exist_ok=True)
-    cache_key = make_cache_key(bbox_lonlat=bbox_lonlat, highway_pattern=highway_pattern)
-    return scene_cache_dir / f"tile_{tile_index:04d}_{cache_key}.json.gz"
-
-
-def load_cached_tile_elements(
-    *,
-    cache_path: Path,
-    bbox_lonlat: tuple[float, float, float, float],
-    highway_pattern: str,
-) -> list[dict] | None:
-    if not cache_path.exists():
-        return None
-
-    with gzip.open(cache_path, "rt", encoding="utf-8") as fh:
-        payload = json.load(fh)
-
-    cached_bbox = tuple(float(value) for value in payload.get("bbox_lonlat", []))
-    cached_pattern = payload.get("highway_pattern")
-    elements = payload.get("elements")
-
-    if cached_bbox != tuple(float(value) for value in bbox_lonlat):
-        return None
-    if cached_pattern != highway_pattern:
-        return None
-    if not isinstance(elements, list):
-        return None
-
-    return elements
-
-
-def save_cached_tile_elements(
-    *,
-    cache_path: Path,
-    bbox_lonlat: tuple[float, float, float, float],
-    highway_pattern: str,
-    endpoint_url: str,
-    elements: list[dict],
-) -> None:
-    payload = {
-        "bbox_lonlat": list(bbox_lonlat),
-        "highway_pattern": highway_pattern,
-        "endpoint_url": endpoint_url,
-        "fetched_at_unix": time.time(),
-        "element_count": len(elements),
-        "elements": elements,
-    }
-
-    tmp_path = cache_path.with_suffix(cache_path.suffix + ".part")
-    with gzip.open(tmp_path, "wt", encoding="utf-8") as fh:
-        json.dump(payload, fh, separators=(",", ":"))
-    tmp_path.replace(cache_path)
 
 
 def read_raster_grid(tif_path: Path) -> RasterGrid:
@@ -514,8 +422,6 @@ def fetch_tiled_overpass_elements(
     *,
     session: requests.Session,
     overpass_urls: list[str],
-    scene_name: str,
-    cache_dir: Path,
     bbox_lonlat: tuple[float, float, float, float],
     highway_pattern: str,
     connect_timeout_seconds: float,
@@ -524,7 +430,6 @@ def fetch_tiled_overpass_elements(
     request_pause_seconds: float,
     retry_attempts: int,
     max_concurrent_requests: int,
-    refresh_cache: bool,
     progress_prefix: str,
     interactive_progress: bool,
 ) -> list[dict]:
@@ -533,7 +438,6 @@ def fetch_tiled_overpass_elements(
     fallback_ways: list[dict] = []
     start_time = time.perf_counter()
     endpoint_urls = overpass_urls or list(DEFAULT_OVERPASS_URLS)
-    cache_hits = 0
 
     def fetch_tile_request(
         *,
@@ -542,29 +446,6 @@ def fetch_tiled_overpass_elements(
         preferred_endpoint_index: int,
         shared_session: requests.Session | None,
     ) -> OverpassTileResult:
-        cache_path = get_tile_cache_path(
-            cache_dir=cache_dir,
-            scene_name=scene_name,
-            tile_index=tile_index,
-            bbox_lonlat=bbox_tile,
-            highway_pattern=highway_pattern,
-        )
-
-        if not refresh_cache:
-            cached_elements = load_cached_tile_elements(
-                cache_path=cache_path,
-                bbox_lonlat=bbox_tile,
-                highway_pattern=highway_pattern,
-            )
-            if cached_elements is not None:
-                return OverpassTileResult(
-                    tile_index=tile_index,
-                    bbox_lonlat=bbox_tile,
-                    endpoint_url=f"cache:{cache_path.name}",
-                    elements=cached_elements,
-                    from_cache=True,
-                )
-
         endpoint_count = len(endpoint_urls)
         last_error: Exception | None = None
 
@@ -585,19 +466,11 @@ def fetch_tiled_overpass_elements(
                 )
                 if request_pause_seconds > 0:
                     time.sleep(request_pause_seconds)
-                save_cached_tile_elements(
-                    cache_path=cache_path,
-                    bbox_lonlat=bbox_tile,
-                    highway_pattern=highway_pattern,
-                    endpoint_url=endpoint_url,
-                    elements=elements,
-                )
                 return OverpassTileResult(
                     tile_index=tile_index,
                     bbox_lonlat=bbox_tile,
                     endpoint_url=endpoint_url,
                     elements=elements,
-                    from_cache=False,
                 )
             except Exception as exc:  # noqa: BLE001
                 last_error = exc
@@ -618,7 +491,7 @@ def fetch_tiled_overpass_elements(
             completed=0,
             total=len(bbox_tiles),
             start_time=start_time,
-            suffix=f"unique ways 0 | cache 0 | endpoints {len(endpoint_urls)}",
+            suffix=f"unique ways 0 | endpoints {len(endpoint_urls)}",
         ),
         done=False,
         interactive=interactive_progress,
@@ -645,8 +518,6 @@ def fetch_tiled_overpass_elements(
                 shared_session=session,
             )
             absorb_elements(result)
-            if result.from_cache:
-                cache_hits += 1
             completed += 1
             if interactive_progress or should_emit_progress_update(completed, len(bbox_tiles)):
                 print_progress_line(
@@ -657,7 +528,6 @@ def fetch_tiled_overpass_elements(
                         start_time=start_time,
                         suffix=(
                             f"unique ways {len(unique_ways) + len(fallback_ways)} "
-                            f"| cache {cache_hits} "
                             f"| last {result.endpoint_url}"
                         ),
                     ),
@@ -696,8 +566,6 @@ def fetch_tiled_overpass_elements(
                 worker_index = active_futures.pop(future)
                 result = future.result()
                 absorb_elements(result)
-                if result.from_cache:
-                    cache_hits += 1
                 completed += 1
                 if interactive_progress or should_emit_progress_update(completed, len(bbox_tiles)):
                     print_progress_line(
@@ -708,7 +576,6 @@ def fetch_tiled_overpass_elements(
                             start_time=start_time,
                             suffix=(
                                 f"unique ways {len(unique_ways) + len(fallback_ways)} "
-                                f"| cache {cache_hits} "
                                 f"| last {result.endpoint_url}"
                             ),
                         ),
@@ -812,7 +679,6 @@ def update_scene_metadata(
     *,
     scene_tif_path: Path,
     scene_source_copy_path: Path,
-    cache_dir: Path,
     bbox_lonlat: tuple[float, float, float, float],
     overpass_urls: list[str],
     highway_pattern: str,
@@ -839,7 +705,6 @@ def update_scene_metadata(
         "layer_name": TARGET_LAYER_NAME,
         "overpass_url": overpass_urls[0] if overpass_urls else None,
         "overpass_urls": overpass_urls,
-        "cache_dir": str(cache_dir.resolve()),
         "highway_pattern": highway_pattern,
         "bbox_lonlat": list(bbox_lonlat),
         "matched_way_count": matched_way_count,
@@ -853,7 +718,6 @@ def process_tif(
     *,
     tif_path: Path,
     output_dir: Path,
-    cache_dir: Path,
     overwrite: bool,
     overpass_urls: list[str],
     highway_pattern: str,
@@ -863,7 +727,6 @@ def process_tif(
     request_pause_seconds: float,
     retry_attempts: int,
     max_concurrent_requests: int,
-    refresh_cache: bool,
     interactive_progress: bool,
     scene_index: int,
     scene_count: int,
@@ -899,15 +762,12 @@ def process_tif(
         f"{max_bbox_degrees:.2f} degrees | endpoints {len(overpass_urls)} | "
         f"parallel requests {max_concurrent_requests}"
     )
-    safe_print(f"  OSM cache dir: {get_scene_cache_dir(cache_dir, tif_path.stem)}")
 
     with requests.Session() as session:
         session.headers.update({"User-Agent": "CREATEDATASET-OSM/1.0"})
         elements = fetch_tiled_overpass_elements(
             session=session,
             overpass_urls=overpass_urls,
-            scene_name=tif_path.stem,
-            cache_dir=cache_dir,
             bbox_lonlat=bbox_lonlat,
             highway_pattern=highway_pattern,
             connect_timeout_seconds=connect_timeout_seconds,
@@ -916,7 +776,6 @@ def process_tif(
             request_pause_seconds=request_pause_seconds,
             retry_attempts=retry_attempts,
             max_concurrent_requests=max_concurrent_requests,
-            refresh_cache=refresh_cache,
             progress_prefix=progress_prefix,
             interactive_progress=interactive_progress,
         )
@@ -928,7 +787,6 @@ def process_tif(
         scene_dir,
         scene_tif_path=tif_path,
         scene_source_copy_path=scene_source_copy_path,
-        cache_dir=cache_dir,
         bbox_lonlat=bbox_lonlat,
         overpass_urls=overpass_urls,
         highway_pattern=highway_pattern,
@@ -958,15 +816,12 @@ def run(
     osm_retry_attempts: int,
     osm_max_concurrent_requests: int,
     osm_max_concurrent_scenes: int,
-    osm_cache_dir: Path,
-    osm_refresh_cache: bool,
 ) -> Path:
     ensure_createdataset_dirs()
 
     resolved_tif_path = tif_path.expanduser().resolve() if tif_path is not None else None
     resolved_tif_dir = tif_dir.expanduser().resolve()
     resolved_output_dir = output_dir.expanduser().resolve()
-    resolved_cache_dir = osm_cache_dir.expanduser().resolve()
 
     if resolved_tif_path is not None:
         if not resolved_tif_path.exists():
@@ -989,10 +844,8 @@ def run(
 
     resolved_output_dir.mkdir(parents=True, exist_ok=True)
     resolved_overpass_urls = resolve_overpass_urls(osm_overpass_urls, osm_overpass_url)
-    resolved_cache_dir.mkdir(parents=True, exist_ok=True)
     safe_print(f"Output layers folder: {resolved_output_dir}")
     safe_print(f"Overpass endpoints ({len(resolved_overpass_urls)}): {', '.join(resolved_overpass_urls)}")
-    safe_print(f"OSM raw cache root: {resolved_cache_dir}")
     safe_print(f"OSM scene workers: {max(1, osm_max_concurrent_scenes)}")
 
     failures: list[tuple[str, str]] = []
@@ -1005,7 +858,6 @@ def run(
                 process_tif(
                     tif_path=current_tif_path,
                     output_dir=resolved_output_dir,
-                    cache_dir=resolved_cache_dir,
                     overwrite=overwrite,
                     overpass_urls=resolved_overpass_urls,
                     highway_pattern=osm_highway_pattern,
@@ -1015,7 +867,6 @@ def run(
                     request_pause_seconds=osm_request_pause_seconds,
                     retry_attempts=osm_retry_attempts,
                     max_concurrent_requests=osm_max_concurrent_requests,
-                    refresh_cache=osm_refresh_cache,
                     interactive_progress=interactive_progress,
                     scene_index=scene_index,
                     scene_count=total_scenes,
@@ -1035,7 +886,6 @@ def run(
                     process_tif,
                     tif_path=current_tif_path,
                     output_dir=resolved_output_dir,
-                    cache_dir=resolved_cache_dir,
                     overwrite=overwrite,
                     overpass_urls=resolved_overpass_urls,
                     highway_pattern=osm_highway_pattern,
@@ -1045,7 +895,6 @@ def run(
                     request_pause_seconds=osm_request_pause_seconds,
                     retry_attempts=osm_retry_attempts,
                     max_concurrent_requests=osm_max_concurrent_requests,
-                    refresh_cache=osm_refresh_cache,
                     interactive_progress=False,
                     scene_index=scene_index,
                     scene_count=total_scenes,
@@ -1090,8 +939,6 @@ def run_from_args(args: argparse.Namespace) -> Path:
         osm_retry_attempts=args.osm_retry_attempts,
         osm_max_concurrent_requests=args.osm_max_concurrent_requests,
         osm_max_concurrent_scenes=args.osm_max_concurrent_scenes,
-        osm_cache_dir=args.osm_cache_dir,
-        osm_refresh_cache=args.osm_refresh_cache,
     )
 
 

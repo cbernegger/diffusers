@@ -8,7 +8,6 @@ WARPED_TIFS_DIR = CREATEDATASET_ROOT / "WARPED_TIFS"
 LAYERS_DIR = CREATEDATASET_ROOT / "LAYERS"
 SCENE_WORK_DIR = CREATEDATASET_ROOT / "scene_work"
 BLACK_MARBLE_CACHE_DIR = CREATEDATASET_ROOT / "BLACK_MARBLE_CACHE"
-OSM_CACHE_DIR = CREATEDATASET_ROOT / "OSM_CACHE"
 
 
 def ensure_createdataset_dirs() -> None:
@@ -18,6 +17,5 @@ def ensure_createdataset_dirs() -> None:
         LAYERS_DIR,
         SCENE_WORK_DIR,
         BLACK_MARBLE_CACHE_DIR,
-        OSM_CACHE_DIR,
     ):
         path.mkdir(parents=True, exist_ok=True)

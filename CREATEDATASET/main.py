@@ -6,7 +6,7 @@ from pathlib import Path
 import OSM
 import black_marble_daily
 import earthengine_layers
-from paths import BLACK_MARBLE_CACHE_DIR, LAYERS_DIR, OSM_CACHE_DIR, WARPED_TIFS_DIR, ensure_createdataset_dirs
+from paths import BLACK_MARBLE_CACHE_DIR, LAYERS_DIR, WARPED_TIFS_DIR, ensure_createdataset_dirs
 
 
 PIPELINE_STEPS = {
@@ -203,17 +203,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
         type=int,
         default=OSM.DEFAULT_MAX_CONCURRENT_SCENES,
         help="Maximum number of TIFF scenes to process in parallel for the OSM step.",
-    )
-    parser.add_argument(
-        "--osm-cache-dir",
-        type=Path,
-        default=OSM_CACHE_DIR,
-        help="Folder for cached raw OSM tile responses.",
-    )
-    parser.add_argument(
-        "--osm-refresh-cache",
-        action="store_true",
-        help="Ignore existing cached OSM tile responses and redownload them.",
     )
     return parser
 
