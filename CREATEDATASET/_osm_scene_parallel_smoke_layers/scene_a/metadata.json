@@ -1,0 +1,25 @@
+{
+  "scene_id": "scene_a",
+  "source_warped_tif": "C:\\Users\\cinoa\\Desktop\\NTL\\Git Diffusion\\diffusers\\CREATEDATASET\\_osm_scene_parallel_smoke_inputs\\scene_a.tif",
+  "source_scene_tif_copy": "C:\\Users\\cinoa\\Desktop\\NTL\\Git Diffusion\\diffusers\\CREATEDATASET\\_osm_scene_parallel_smoke_layers\\scene_a\\luojia_original.tif",
+  "layers": [
+    "osm_roads"
+  ],
+  "osm": {
+    "layer_name": "osm_roads",
+    "overpass_url": "https://overpass-api.de/api/interpreter",
+    "overpass_urls": [
+      "https://overpass-api.de/api/interpreter"
+    ],
+    "cache_dir": "C:\\Users\\cinoa\\Desktop\\NTL\\Git Diffusion\\diffusers\\CREATEDATASET\\_osm_scene_parallel_smoke_cache",
+    "highway_pattern": "motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|road",
+    "bbox_lonlat": [
+      -118.3,
+      34.0,
+      -118.25,
+      34.05
+    ],
+    "matched_way_count": 2921,
+    "all_touched": true
+  }
+}

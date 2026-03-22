@@ -20,14 +20,14 @@ DEFAULT_BAND_NAMES = [
 ]
 
 DEFAULT_CMAPS = {
-    "bm": "magma",
-    "gaia_year": "plasma",
-    "urban_mask": "gray",
-    "building_height": "viridis",
+    "bm": "gray",
+    "gaia_year": "gray",
+    "urban_mask": "gist_yarg",
+    "building_height": "gray",
     "water_mask": "Blues",
     "ndvi": "YlGn",
-    "ndbi": "RdYlBu_r",
-    "mndwi": "PuBu",
+    "ndbi": "YlGn",
+    "mndwi": "YlGn",
 }
 
 
