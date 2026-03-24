@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+#  python main.py --max-files 4 --max-concurrent-tiles 6 --osm-max-concurrent-scenes 2 --osm-max-concurrent-requests 2    
+
 import argparse
 from pathlib import Path
 

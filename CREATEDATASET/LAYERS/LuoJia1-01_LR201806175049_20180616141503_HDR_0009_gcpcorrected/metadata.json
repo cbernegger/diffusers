@@ -1,0 +1,69 @@
+{
+  "source_warped_tif": "C:\\Users\\cinoa\\Desktop\\NTL\\Git Diffusion\\diffusers\\CREATEDATASET\\WARPED_TIFS\\LuoJia1-01_LR201806175049_20180616141503_HDR_0009_gcpcorrected.tif",
+  "source_scene_tif_copy": "C:\\Users\\cinoa\\Desktop\\NTL\\Git Diffusion\\diffusers\\CREATEDATASET\\LAYERS\\LuoJia1-01_LR201806175049_20180616141503_HDR_0009_gcpcorrected\\luojia_original.tif",
+  "scene_id": "LuoJia1-01_LR201806175049_20180616141503_HDR_0009_gcpcorrected",
+  "width": 2849,
+  "height": 2404,
+  "crs": "EPSG:3857",
+  "transform": [
+    142.7978868657194,
+    0.0,
+    13321662.762808148,
+    0.0,
+    -142.7978868657194,
+    3443405.070754523
+  ],
+  "bounds": [
+    13321662.762808148,
+    3100118.9507293333,
+    13728493.942488583,
+    3443405.070754523
+  ],
+  "band_count": 1,
+  "dtype": "uint32",
+  "nodata": 0.0,
+  "layers": [
+    "bm",
+    "gaia_year",
+    "urban_mask",
+    "building_height",
+    "water_mask",
+    "ndvi",
+    "ndbi",
+    "mndwi",
+    "bm_daily",
+    "osm_roads"
+  ],
+  "generator": "earthengine",
+  "black_marble_daily": {
+    "acquisition_date": "2018-06-16",
+    "product": "VNP46A2",
+    "collection": "5200",
+    "version": "002",
+    "archive_root": "https://ladsweb.modaps.eosdis.nasa.gov/archive/allData",
+    "field_name": "DNB_BRDF-Corrected_NTL + Gap_Filled_DNB_BRDF-Corrected_NTL fallback",
+    "units": "nWatts/(cm^2 sr)",
+    "source_files": [
+      "VNP46A2.A2018167.h29v06.002.2024356021443.h5",
+      "VNP46A2.A2018167.h30v06.002.2024356020521.h5"
+    ]
+  },
+  "osm": {
+    "layer_name": "osm_roads",
+    "overpass_url": "https://overpass.private.coffee/api/interpreter",
+    "overpass_urls": [
+      "https://overpass.private.coffee/api/interpreter",
+      "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+      "https://overpass-api.de/api/interpreter"
+    ],
+    "highway_pattern": "motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|road",
+    "bbox_lonlat": [
+      119.67053269716449,
+      26.812927982204428,
+      123.3251593647976,
+      29.530995836549682
+    ],
+    "matched_way_count": 131176,
+    "all_touched": true
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "source_warped_tif": "C:\\Users\\cinoa\\Desktop\\NTL\\Git Diffusion\\diffusers\\CREATEDATASET\\WARPED_TIFS\\LuoJia1-01_LR201806064831_20180603055057_HDR_0017_gcpcorrected.tif",
+  "source_scene_tif_copy": "C:\\Users\\cinoa\\Desktop\\NTL\\Git Diffusion\\diffusers\\CREATEDATASET\\LAYERS\\LuoJia1-01_LR201806064831_20180603055057_HDR_0017_gcpcorrected\\luojia_original.tif",
+  "scene_id": "LuoJia1-01_LR201806064831_20180603055057_HDR_0017_gcpcorrected",
+  "width": 2725,
+  "height": 2656,
+  "crs": "EPSG:3857",
+  "transform": [
+    148.169790865305,
+    0.0,
+    -13211949.865175294,
+    0.0,
+    -148.169790865305,
+    4108524.4104014877
+  ],
+  "bounds": [
+    -13211949.865175294,
+    3714985.4458632376,
+    -12808187.185067337,
+    4108524.4104014877
+  ],
+  "band_count": 1,
+  "dtype": "uint32",
+  "nodata": 0.0,
+  "layers": [
+    "bm",
+    "gaia_year",
+    "urban_mask",
+    "building_height",
+    "water_mask",
+    "ndvi",
+    "ndbi",
+    "mndwi",
+    "bm_daily",
+    "osm_roads"
+  ],
+  "generator": "earthengine",
+  "black_marble_daily": {
+    "acquisition_date": "2018-06-03",
+    "product": "VNP46A2",
+    "collection": "5200",
+    "version": "002",
+    "archive_root": "https://ladsweb.modaps.eosdis.nasa.gov/archive/allData",
+    "field_name": "DNB_BRDF-Corrected_NTL + Gap_Filled_DNB_BRDF-Corrected_NTL fallback",
+    "units": "nWatts/(cm^2 sr)",
+    "source_files": [
+      "VNP46A2.A2018154.h06v05.002.2024355180746.h5"
+    ]
+  },
+  "osm": {
+    "layer_name": "osm_roads",
+    "overpass_url": "https://overpass.private.coffee/api/interpreter",
+    "overpass_urls": [
+      "https://overpass.private.coffee/api/interpreter",
+      "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+      "https://overpass-api.de/api/interpreter"
+    ],
+    "highway_pattern": "motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|road",
+    "bbox_lonlat": [
+      -118.68496496907818,
+      31.6311142214276,
+      -115.05790310209778,
+      34.59164156339336
+    ],
+    "matched_way_count": 658515,
+    "all_touched": true
+  }
+}
