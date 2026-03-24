@@ -36,6 +36,7 @@ DEFAULT_HIGHWAY_PATTERN = (
 DEFAULT_CONNECT_TIMEOUT_SECONDS = 30.0
 DEFAULT_READ_TIMEOUT_SECONDS = 180.0
 DEFAULT_MAX_BBOX_DEGREES = 0.5
+DEFAULT_MIN_FALLBACK_BBOX_DEGREES = 0.0625
 DEFAULT_REQUEST_PAUSE_SECONDS = 0.0
 DEFAULT_RETRY_ATTEMPTS = 4
 DEFAULT_MAX_CONCURRENT_REQUESTS = min(3, len(DEFAULT_OVERPASS_URLS))
@@ -253,6 +254,15 @@ def normalize_overpass_urls(values: list[str]) -> list[str]:
     return normalized
 
 
+def summarize_response_text(response_text: str, *, max_chars: int = 240) -> str:
+    normalized = " ".join(response_text.split())
+    if not normalized:
+        return "<empty response body>"
+    if len(normalized) <= max_chars:
+        return normalized
+    return normalized[: max_chars - 3] + "..."
+
+
 def resolve_overpass_urls(
     explicit_urls: list[str] | None,
     explicit_url: str | None,
@@ -348,6 +358,40 @@ def iter_bbox_tiles(
     return tiles
 
 
+def split_bbox_tile(
+    bbox_lonlat: tuple[float, float, float, float],
+    *,
+    min_bbox_degrees: float,
+) -> list[tuple[float, float, float, float]]:
+    west, south, east, north = bbox_lonlat
+    lon_span = max(0.0, east - west)
+    lat_span = max(0.0, north - south)
+
+    split_lon = lon_span > min_bbox_degrees
+    split_lat = lat_span > min_bbox_degrees
+    if not split_lon and not split_lat:
+        return [bbox_lonlat]
+
+    lon_ranges = [(west, east)]
+    if split_lon:
+        mid_lon = west + (lon_span / 2.0)
+        lon_ranges = [(west, mid_lon), (mid_lon, east)]
+
+    lat_ranges = [(south, north)]
+    if split_lat:
+        mid_lat = south + (lat_span / 2.0)
+        lat_ranges = [(south, mid_lat), (mid_lat, north)]
+
+    tiles: list[tuple[float, float, float, float]] = []
+    for tile_west, tile_east in lon_ranges:
+        for tile_south, tile_north in lat_ranges:
+            if tile_east <= tile_west or tile_north <= tile_south:
+                continue
+            tiles.append((tile_west, tile_south, tile_east, tile_north))
+
+    return tiles or [bbox_lonlat]
+
+
 def fetch_overpass_elements(
     *,
     session: requests.Session | None,
@@ -388,10 +432,21 @@ def fetch_overpass_elements(
                 continue
 
             response.raise_for_status()
-            payload = response.json()
+            try:
+                payload = response.json()
+            except ValueError as exc:
+                detail = summarize_response_text(response.text)
+                raise RuntimeError(
+                    f"Overpass returned non-JSON response from {overpass_url}: {detail}"
+                ) from exc
+
             elements = payload.get("elements")
             if not isinstance(elements, list):
-                raise RuntimeError("Overpass response did not include an `elements` list.")
+                detail = summarize_response_text(response.text)
+                raise RuntimeError(
+                    f"Overpass response from {overpass_url} did not include an `elements` list. "
+                    f"Body: {detail}"
+                )
 
             return elements
         except (requests.RequestException, ValueError, RuntimeError) as exc:
@@ -404,7 +459,7 @@ def fetch_overpass_elements(
         response = last_error.response
         detail = ""
         if response is not None:
-            detail = response.text.strip()
+            detail = summarize_response_text(response.text)
         if not detail:
             detail = "<empty response body>"
         raise RuntimeError(
@@ -438,6 +493,7 @@ def fetch_tiled_overpass_elements(
     fallback_ways: list[dict] = []
     start_time = time.perf_counter()
     endpoint_urls = overpass_urls or list(DEFAULT_OVERPASS_URLS)
+    min_fallback_bbox_degrees = min(DEFAULT_MIN_FALLBACK_BBOX_DEGREES, max_bbox_degrees)
 
     def fetch_tile_request(
         *,
@@ -478,6 +534,34 @@ def fetch_tiled_overpass_elements(
         if last_error is None:
             raise RuntimeError(
                 f"All Overpass endpoints failed for tile {tile_index + 1} without a captured error."
+            )
+
+        subdivided_tiles = split_bbox_tile(
+            bbox_tile,
+            min_bbox_degrees=min_fallback_bbox_degrees,
+        )
+        if len(subdivided_tiles) > 1:
+            safe_print(
+                f"  Tile {tile_index + 1} failed for bbox={bbox_tile}; "
+                f"retrying as {len(subdivided_tiles)} smaller subtiles."
+            )
+            subdivided_elements: list[dict] = []
+            last_endpoint_url = "subdivided"
+            for child_offset, child_bbox in enumerate(subdivided_tiles):
+                child_result = fetch_tile_request(
+                    tile_index=tile_index,
+                    bbox_tile=child_bbox,
+                    preferred_endpoint_index=(preferred_endpoint_index + child_offset) % endpoint_count,
+                    shared_session=shared_session,
+                )
+                subdivided_elements.extend(child_result.elements)
+                last_endpoint_url = child_result.endpoint_url
+
+            return OverpassTileResult(
+                tile_index=tile_index,
+                bbox_lonlat=bbox_tile,
+                endpoint_url=f"subdivided/{last_endpoint_url}",
+                elements=subdivided_elements,
             )
 
         raise RuntimeError(
