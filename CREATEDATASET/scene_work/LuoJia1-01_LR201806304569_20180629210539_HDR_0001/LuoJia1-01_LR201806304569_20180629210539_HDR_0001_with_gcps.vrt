@@ -1,0 +1,39 @@
+<VRTDataset rasterXSize="2844" rasterYSize="2261">
+  <SRS dataAxisToSRSAxisMapping="2,1">GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AXIS["Latitude",NORTH],AXIS["Longitude",EAST],AUTHORITY["EPSG","4326"]]</SRS>
+  <GeoTransform>  1.1459931584231454e+01,  1.3759000000000000e-03,  0.0000000000000000e+00,  3.7654161784607282e+01,  0.0000000000000000e+00, -1.3759000000000000e-03</GeoTransform>
+  <Metadata>
+    <MDI key="AREA_OR_POINT">Area</MDI>
+  </Metadata>
+  <Metadata domain="IMAGE_STRUCTURE">
+    <MDI key="INTERLEAVE">BAND</MDI>
+  </Metadata>
+  <GCPList Projection="GEOGCS[&quot;WGS 84&quot;,DATUM[&quot;WGS_1984&quot;,SPHEROID[&quot;WGS 84&quot;,6378137,298.257223563,AUTHORITY[&quot;EPSG&quot;,&quot;7030&quot;]],AUTHORITY[&quot;EPSG&quot;,&quot;6326&quot;]],PRIMEM[&quot;Greenwich&quot;,0,AUTHORITY[&quot;EPSG&quot;,&quot;8901&quot;]],UNIT[&quot;degree&quot;,0.0174532925199433,AUTHORITY[&quot;EPSG&quot;,&quot;9122&quot;]],AXIS[&quot;Latitude&quot;,NORTH],AXIS[&quot;Longitude&quot;,EAST],AUTHORITY[&quot;EPSG&quot;,&quot;4326&quot;]]" dataAxisToSRSAxisMapping="2,1">
+    <GCP Id="" Pixel="2367.1855" Line="464.7549" X="1.470907277760E+01" Y="3.701657913635E+01" />
+    <GCP Id="" Pixel="2392.1816" Line="534.1959" X="1.474616370889E+01" Y="3.692768018735E+01" />
+    <GCP Id="" Pixel="2483.8340" Line="673.0780" X="1.486567893194E+01" Y="3.673305845351E+01" />
+    <GCP Id="" Pixel="2500.4980" Line="675.8557" X="1.488628500488E+01" Y="3.673305845351E+01" />
+    <GCP Id="" Pixel="2186.6582" Line="973.0633" X="1.446179990231E+01" Y="3.632573240650E+01" />
+    <GCP Id="" Pixel="2064.4551" Line="1192.4969" X="1.430107253338E+01" Y="3.601966608650E+01" />
+    <GCP Id="" Pixel="2083.8965" Line="1203.6075" X="1.432579982091E+01" Y="3.600633175466E+01" />
+    <GCP Id="" Pixel="2117.2246" Line="1211.9404" X="1.437525439596E+01" Y="3.599299516725E+01" />
+    <GCP Id="" Pixel="2086.6738" Line="1217.4957" X="1.432992103549E+01" Y="3.598966066801E+01" />
+    <GCP Id="" Pixel="2106.1152" Line="1242.4945" X="1.435052710843E+01" Y="3.595297187505E+01" />
+    <GCP Id="" Pixel="2133.8887" Line="1248.0498" X="1.438761803973E+01" Y="3.594629935368E+01" />
+    <GCP Id="" Pixel="2264.4238" Line="1306.3802" X="1.457719391078E+01" Y="3.586952486671E+01" />
+    <GCP Id="" Pixel="2150.5527" Line="1334.1566" X="1.442058775643E+01" Y="3.582609765114E+01" />
+    <GCP Id="" Pixel="2189.4355" Line="1339.7119" X="1.446592111690E+01" Y="3.581607260921E+01" />
+    <GCP Id="" Pixel="2219.9863" Line="1348.0448" X="1.451125447737E+01" Y="3.580938854458E+01" />
+    <GCP Id="" Pixel="2233.8730" Line="1348.0448" X="1.453598176490E+01" Y="3.580604630128E+01" />
+    <GCP Id="" Pixel="1064.6113" Line="1406.3754" X="1.292870807555E+01" Y="3.571240640526E+01" />
+    <GCP Id="" Pixel="820.2051" Line="1561.9232" X="1.259901090850E+01" Y="3.549460363401E+01" />
+  </GCPList>
+  <VRTRasterBand dataType="UInt32" band="1" blockXSize="2844">
+    <ColorInterp>Gray</ColorInterp>
+    <SimpleSource>
+      <SourceFilename relativeToVRT="0">c:\Users\cinoa\Desktop\NTL\Git Diffusion\diffusers\CREATEDATASET\local\LULO4\LuoJia1-01_LR201806304569_20180629210539_HDR_0001_gec.tif</SourceFilename>
+      <SourceBand>1</SourceBand>
+      <SrcRect xOff="0" yOff="0" xSize="2844" ySize="2261" />
+      <DstRect xOff="0" yOff="0" xSize="2844" ySize="2261" />
+    </SimpleSource>
+  </VRTRasterBand>
+</VRTDataset>

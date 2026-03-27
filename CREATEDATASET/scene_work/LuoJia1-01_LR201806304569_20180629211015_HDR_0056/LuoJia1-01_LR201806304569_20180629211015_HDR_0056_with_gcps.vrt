@@ -295,7 +295,7 @@
   <VRTRasterBand dataType="UInt32" band="1" blockXSize="3430">
     <ColorInterp>Gray</ColorInterp>
     <SimpleSource>
-      <SourceFilename relativeToVRT="0">c:\Users\cinoa\Desktop\NTL\Git Diffusion\diffusers\CREATEDATASET\local\LUOJIA_EXTRACTED\LuoJia1-01_LR201806304569_20180629211015_HDR_0056_gec.tif</SourceFilename>
+      <SourceFilename relativeToVRT="0">c:\Users\cinoa\Desktop\NTL\Git Diffusion\diffusers\CREATEDATASET\local\LULO4\LuoJia1-01_LR201806304569_20180629211015_HDR_0056_gec.tif</SourceFilename>
       <SourceBand>1</SourceBand>
       <SrcRect xOff="0" yOff="0" xSize="3430" ySize="2128" />
       <DstRect xOff="0" yOff="0" xSize="3430" ySize="2128" />
